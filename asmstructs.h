@@ -29,6 +29,7 @@ typedef struct sStructElem
   ShortInt BitPos; /* -1 -> no bit position */
   ShortInt BitWidthM1; /* -1 -> no bit field, otherwise actual width minus one */
   tSymbolSize OpSize;
+  char* pPseudo;
 } TStructElem, *PStructElem;
 
 typedef struct sStructRec

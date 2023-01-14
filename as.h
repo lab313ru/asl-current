@@ -14,4 +14,8 @@ extern char *GetErrorPos(void);
 
 extern void WriteCode(void);
 
+extern void SplitLine(void);
+
+extern void Produce_Code(void);
+
 #endif /* _AS_H */

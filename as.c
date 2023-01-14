@@ -2297,7 +2297,7 @@ void WriteCode(void)
   }
 }
 
-static void Produce_Code(void)
+void Produce_Code(void)
 {
   PMacroRec OneMacro;
   PStructRec OneStruct;
@@ -2510,7 +2510,7 @@ static void adjust_copy_comp(tStrComp *p_comp, const char *p_src, size_t newsz)
   p_comp->Pos.Len = strmemcpy(p_comp->str.p_str, p_comp->str.capacity, p_src, newsz);
 }
 
-static void SplitLine(void)
+void SplitLine(void)
 {
   const char *pRun, *pEnd, *pPos;
 

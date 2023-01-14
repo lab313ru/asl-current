@@ -73,6 +73,7 @@ void DestroyStructElem(PStructElem pStructElem)
 {
   if (pStructElem->pElemName) free(pStructElem->pElemName);
   if (pStructElem->pRefElemName) free(pStructElem->pRefElemName);
+  if (pStructElem->pPseudo) free(pStructElem->pPseudo);
   free(pStructElem);
 }
 
@@ -129,6 +130,14 @@ PStructElem CreateStructElem(const tStrComp *pElemName)
   {
     pNeu->pElemName = as_strdup(p_ext_name->str.p_str);
     pNeu->pRefElemName = NULL;
+
+    as_dynstr_t tmp;
+    as_dynstr_ini_c_str(&tmp, OpPart.str.p_str);
+    as_dynstr_append_c_str(&tmp, &AttrSplit);
+    as_dynstr_append_c_str(&tmp, AttrPart.str.p_str);
+    pNeu->pPseudo = as_strdup(tmp.p_str);
+    as_dynstr_free(&tmp);
+
     pNeu->ExpandFnc = ExpandStructStd;
     pNeu->Offset = 0;
     pNeu->BitPos = pNeu->BitWidthM1 = -1;
@@ -157,6 +166,7 @@ PStructElem CloneStructElem(const struct sStrComp *pCloneElemName, const struct 
   pResult->BitPos = pSrc->BitPos;
   pResult->ExpandFnc = pSrc->ExpandFnc;
   pResult->pRefElemName = as_strdup(pSrc->pRefElemName);
+  pResult->pPseudo = as_strdup(pSrc->pPseudo);
   return pResult;
 }
 
@@ -558,19 +568,56 @@ static void ExpandStruct_One(PStructRec StructRec, char *pVarPrefix, char *pStru
 void ExpandStruct(PStructRec StructRec, const char *p_struct_name)
 {
   String CompVarName, CompStructName;
-  int z;
+  int z, l;
   unsigned DimensionCnt = 0, Dim;
   LargeInt Dimensions[DIMENSION_MAX];
   tStrComp Arg;
   tEvalResult EvalResult;
+  PStructElem p;
 
-  if (!LabPart.str.p_str[0])
-  {
-    WrError(ErrNum_StructNameMissing);
+  if (ArgCnt >= 1 && ArgStr[1].str.p_str[0] == '<') {
+    ArgStr[1].str.p_str[0] = ' ';
+
+    l = strlen(ArgStr[ArgCnt].str.p_str);
+    ArgStr[ArgCnt].str.p_str[l - 1] = '\0';
+
+    as_dynstr_t tmp;
+    as_dynstr_ini_c_str(&tmp, p_struct_name);
+    as_dynstr_append_c_str(&tmp, "<");
+
+    l = 1;
+    for (p = StructRec->Elems; p != NULL; p = p->Next) {
+      as_dynstr_free(&OneLine);
+      as_dynstr_ini_c_str(&OneLine, " ");
+      as_dynstr_append_c_str(&OneLine, p->pPseudo);
+      as_dynstr_append_c_str(&tmp, p->pPseudo);
+
+      if (ArgStr[l].str.p_str[0] != ' ') {
+        as_dynstr_append_c_str(&OneLine, " ");
+        as_dynstr_append_c_str(&tmp, " ");
+      }
+
+      as_dynstr_append_c_str(&OneLine, ArgStr[l].str.p_str);
+      as_dynstr_append_c_str(&tmp, ArgStr[l++].str.p_str);
+      as_dynstr_append_c_str(&tmp, ";");
+
+      SplitLine();
+      Produce_Code();
+
+      MakeList(OneLine.p_str);
+    }
+
+    as_dynstr_free(&OneLine);
+    as_dynstr_ini_c_str(&OneLine, tmp.p_str);
+    as_dynstr_append_c_str(&OneLine, ">");
+    as_dynstr_free(&tmp);
+
+    BookKeeping();
+    DontPrint = True;
+    CodeOutput = False;
+    CodeLen = 0;
     return;
   }
-
-  /* currently, we only support array dimensions as arguments */
 
   for (z = 1; z <= ArgCnt; z++)
     if (IsIndirectGen(ArgStr[z].str.p_str, "[]"))
