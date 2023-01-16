@@ -614,7 +614,6 @@ void ExpandStruct(PStructRec StructRec, const char *p_struct_name)
 
     BookKeeping();
     DontPrint = True;
-    CodeOutput = False;
     CodeLen = 0;
     return;
   }
